@@ -24,12 +24,6 @@ fits.info(image_file)
 image_data = fits.getdata(image_file, ext=0)
 
 
-colors = [[1,.5,.5], [1,0,0], [0,1,0], [0,0,1], [0,0,0], [0, .5, .5]]
-cm = matplotlib.colors.ListedColormap(colors)
-norm = matplotlib.colors.BoundaryNorm([0,1,2,4,6,8,12], cm.N)
-
-
 plt.figure()
-im = plt.imshow(image_data, cmap=cm, norm=norm)
-#im.set_clim()
+im = plt.imshow(image_data, cmap='gray')
 plt.colorbar(im)
