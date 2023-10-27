@@ -1,23 +1,4 @@
 #%%
-
-import numpy as np
-from astropy.io import fits
-from astropy.wcs import WCS
-import matplotlib.pyplot as plt
-from astropy.nddata import Cutout2D
-from astropy import units as u
-from astropy.coordinates import SkyCoord
-import matplotlib.colors as colors
-
-#should this be a for loop?
-# Open the FITS file and extract data and header
-fits_file_path = 'C:/Users/olive/Dropbox/5. semester/Special kursus/r10789376/ch1/pbcd/SPITZER_I1_10789376_0000_7_E8309859_maic.fits'
-hdu_spitzer = fits.open(fits_file_path)
-spitzer_data = hdu_spitzer[0].data
-spitzer_hdr = hdu_spitzer[0].header
-wcs_spitzer = WCS(spitzer_hdr)
-
-
 import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
@@ -84,7 +65,8 @@ for subfolder in subfolders:
                 levels = (3, 4, 5, 6, 8, 10, 12, 14)
 
                 count=0
-
+                
+                output_folder = 'C:/Users/olive/Dropbox/5. semester/Special kursus/Cutouts'
                 # Create a new figure for each cutout
                 for position in positions:
                     loc = SkyCoord(position[0] * u.deg, position[1] * u.deg)
@@ -99,12 +81,11 @@ for subfolder in subfolders:
                         ax_cutout.grid(color='white', ls='solid')
                         ax_cutout.set_xlabel('RA (J2000)')
                         ax_cutout.set_ylabel('DEC (J2000)')
-                    
-                        # Modify the title to include the current subfolder
                         ax_cutout.set_title(f'IRAC {subfolder} map of Obj_id {int(idno[count])} \n at {position}\n')
 
-                        #cutout_filename = f'cutout_spitzer_{subfolder}_id_{int(idno[count])}.fits'
-                        #fits.writeto(cutout_filename, cutout.data, overwrite=True)
+                        # Specify the full path for saving the cutout
+                        cutout_filename = os.path.join(output_folder, f'cutout_spitzer_{subfolder}_id_{int(idno[count])}.fits')
+                        fits.writeto(cutout_filename, cutout.data, overwrite=True)
 
                     count += 1
 
