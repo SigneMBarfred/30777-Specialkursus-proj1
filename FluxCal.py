@@ -21,7 +21,8 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 
 # load Scuba data
-hdu_scuba = fits.open('C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/Saved files/cutout1.0.fits')
+# hdu_scuba = fits.open('C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/Saved files/cutout1.0.fits')
+hdu_scuba = fits.open('C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/3C239_850_mf_cal_crop_snr.fits')
 scuba850_data_cube = hdu_scuba[0].data  # This is a 3D cube
 hdr_scuba = hdu_scuba[0].header
 wcs_scuba = WCS(hdr_scuba)
@@ -31,30 +32,10 @@ df_scuba = pd.DataFrame(scuba850_data_cube[0,:,:]) # Pandas dataframe
 positions_file = 'C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/RAGERStxt.txt'
 txt_coord = pd.read_csv(positions_file, sep=" ") # Pandas dataframe
 obj_id = txt_coord['obj_id']
-# np_coord = pd.DataFrame(txt_coord).to_numpy()
-# RAGERS_coord = np.transpose(np.array([np_coord[:,1],np_coord[:,2]]))
 
 # WISE data
 WISE = pd.read_csv('C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/Saved files/table_irsa_catalog_search_results.csv')
 WISE_header = WISE.columns
-# np_WISE = pd.DataFrame(WISE).to_numpy()
-# ra = np_WISE[:,1] 
-# dec = np_WISE[:,2]
-# wise = np.asarray(np_WISE[:,1:], dtype = np.float64)
-
-
-####################################
-## Distance to RAGERS
-
-# def distance_to_centrum(df, center_x, center_y):
-#     df['distance_to_centrum'] = np.sqrt((df['ra'] - center_x)**2 + (df['dec'] - center_y)**2)
-#     return df
-
-# x_coord = txt_coord['ra']
-# y_coord = txt_coord['dec']
-# WISE_coord = WISE[['ra','dec']]
-
-# WISE_mask = distance_to_centrum(WISE_coord, x_coord[0], y_coord[0])
 
 #####################
 # Find target sources around RAGERS
@@ -63,12 +44,14 @@ WISE_header = WISE.columns
 def distance_to_centrum(df, center_x, center_y, radius):
     df['distance_to_centrum'] = np.sqrt((df['ra'] - center_x)**2 + (df['dec'] - center_y)**2)
     df['mask'] = df['distance_to_centrum'] <= radius
-    return df['mask']
+    return df['mask'], df['distance_to_centrum']
 
 # Define coordinates
-x_coord = txt_coord['ra']
-y_coord = txt_coord['dec']
+x_coord = txt_coord['ra'] # RAGERS x_coord
+y_coord = txt_coord['dec']## RAGERS y_coord
 WISE_coord = WISE[['ra','dec']]
+
+print(distance_to_centrum(WISE_coord, x_coord[0], y_coord[0], 15/3600)[1])
 
 # Loop to ceate new columns with masks from function
 for i in range(0,len(txt_coord['ra'])):
@@ -76,10 +59,54 @@ for i in range(0,len(txt_coord['ra'])):
     mask_id = (mask_name + str(i+1))
     WISE[str(mask_name + str(i+1))] = distance_to_centrum(WISE_coord, x_coord[i], y_coord[i], 15.0/3600.0)
 
-# n dataframe navne
+# Calculate distance to RAGER sources with Hubble equation
+def Hubble_dist(z):
+    c = 299792458*u.m*u.s**(-1)
+    v = c * z
+    
+    H_0 = 70500*u.m*u.Mpc**(-1)*u.s**(-1)
+    dist = v/H_0
+
+    return dist
+
+# SCUBA/RAGER
+# z = 1.781
+
+# Calculate angular separation Theta from RA and DEC: 2 must be greater dist away then 1 
+def Cal_ang_sep(phi_1, lambda_1, phi_2, lambda_2, dist_1, dist_2):
+    if dist_1 < dist_2:
+        Theta = 2 * math.asin(math.sqrt(math.sin(phi_2 / 2 - phi_1 / 2) ** 2 + math.cos(phi_1) * math.cos(phi_2) * math.sin(lambda_2 / 2 - lambda_1 / 2) ** 2))
+    
+    elif dist_1 > dist_2:
+        Theta = 2 * math.asin(math.sqrt(math.sin(phi_1 / 2 - phi_2 / 2) ** 2 + math.cos(phi_1) * math.cos(phi_2) * math.sin(lambda_1 / 2 - lambda_2 / 2) ** 2))
+
+    return Theta
+
+# Define coordinates as skycoord
+c1 = SkyCoord(ra=x_coord*u.degree, dec=y_coord*u.degree, distance=1500.3*u.pc) # RAGERS
+c2 = SkyCoord(ra=WISE_coord['ra']*u.degree, dec=WISE_coord['dec']*u.degree, distance=WISE['dist']*u.pc) # Other source
+
+# Function to ceate new columns with distance to RAGERS
+def dist_to_RAGER(RAGERS_ra, RAGERS_dec, RAGERS_dist, WISE_ra, WISE_dec, WISE_dist):
+    
+    c1 = SkyCoord(ra=RAGERS_ra*u.degree, dec=RAGERS_dec*u.degree, distance=RAGERS_dist*u.pc) # RAGERS
+    c2 = SkyCoord(ra=WISE_ra*u.degree, dec=WISE_dec*u.degree, distance=WISE_dist*u.pc)
+
+    # Obtain astropy's distance between c1 & c2 coords.
+    radial_dist = c1.separation_3d(c2)
+    return radial_dist
+
+
+# Adds columns with names mask1 - mask23 including boolean if source is within target radius
+for i in range(0,len(txt_coord['ra'])):
+    mask_name = 'mask'
+    mask_id = (mask_name + str(i+1))
+    WISE[str(mask_name + str(i+1))] = distance_to_centrum(WISE_coord, x_coord[i], y_coord[i], 15.0/3600.0)
+
+# Create n dataframe names
 RAGERS = [['RAGER'+ str(_dummy)] for _dummy in range(1, 25)]
 
-# Loop to create list of dataframes with sources within 15 arcsec of RAGERS
+# Loop to create list of dataframes with sources within target radius 15 arcsec of RAGERS
 for i in range(0,len(txt_coord['ra'])):
     mask_name = 'mask'
     mask_id = (mask_name + str(i+1))
