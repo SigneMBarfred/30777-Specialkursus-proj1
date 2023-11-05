@@ -40,83 +40,57 @@ WISE_header = WISE.columns
 #####################
 # Find target sources around RAGERS
 
-# Mask based on distance to RAGERS
-def distance_to_centrum(df, center_x, center_y, radius):
-    df['distance_to_centrum'] = np.sqrt((df['ra'] - center_x)**2 + (df['dec'] - center_y)**2)
-    df['mask'] = df['distance_to_centrum'] <= radius
-    return df['mask'], df['distance_to_centrum']
+# Input: WISE dataframe - RAGER ra and dec in deg - Other source ra and dec in deg - radius in arcsec
+def ang_dist(df, RAGER_ra, RAGER_dec, source_ra, source_dec, radius):
+    df['angular_distance'] = np.arccos(np.sin(RAGER_dec*np.pi/180)*np.sin(source_dec*np.pi/180)+np.cos(RAGER_dec*np.pi/180)*np.cos(source_dec*np.pi/180)*np.cos(RAGER_ra*np.pi/180 - source_ra*np.pi/180))*180/np.pi
+    df['mask'] = df['angular_distance'] <= radius
+    return df['mask'], df['angular_distance']
 
 # Define coordinates
-x_coord = txt_coord['ra'] # RAGERS x_coord
-y_coord = txt_coord['dec']## RAGERS y_coord
+RAGER_ra = txt_coord['ra'] # RAGERS x_coord
+RAGER_dec = txt_coord['dec'] # RAGERS y_coord
 WISE_coord = WISE[['ra','dec']]
 
-print(distance_to_centrum(WISE_coord, x_coord[0], y_coord[0], 15/3600)[1])
-
-# Loop to ceate new columns with masks from function
+# Adds columns with names mask1 - mask24 including boolean if source is within target radius
+# Adds columns with names ang_dist1 - ang_dist24 including boolean if source is within target radius
 for i in range(0,len(txt_coord['ra'])):
-    mask_name = 'mask'
-    mask_id = (mask_name + str(i+1))
-    WISE[str(mask_name + str(i+1))] = distance_to_centrum(WISE_coord, x_coord[i], y_coord[i], 15.0/3600.0)
-
-# Calculate distance to RAGER sources with Hubble equation
-def Hubble_dist(z):
-    c = 299792458*u.m*u.s**(-1)
-    v = c * z
-    
-    H_0 = 70500*u.m*u.Mpc**(-1)*u.s**(-1)
-    dist = v/H_0
-
-    return dist
-
-# SCUBA/RAGER
-# z = 1.781
-
-# Calculate angular separation Theta from RA and DEC: 2 must be greater dist away then 1 
-def Cal_ang_sep(phi_1, lambda_1, phi_2, lambda_2, dist_1, dist_2):
-    if dist_1 < dist_2:
-        Theta = 2 * math.asin(math.sqrt(math.sin(phi_2 / 2 - phi_1 / 2) ** 2 + math.cos(phi_1) * math.cos(phi_2) * math.sin(lambda_2 / 2 - lambda_1 / 2) ** 2))
-    
-    elif dist_1 > dist_2:
-        Theta = 2 * math.asin(math.sqrt(math.sin(phi_1 / 2 - phi_2 / 2) ** 2 + math.cos(phi_1) * math.cos(phi_2) * math.sin(lambda_1 / 2 - lambda_2 / 2) ** 2))
-
-    return Theta
-
-# Define coordinates as skycoord
-c1 = SkyCoord(ra=x_coord*u.degree, dec=y_coord*u.degree, distance=1500.3*u.pc) # RAGERS
-c2 = SkyCoord(ra=WISE_coord['ra']*u.degree, dec=WISE_coord['dec']*u.degree, distance=WISE['dist']*u.pc) # Other source
-
-# Function to ceate new columns with distance to RAGERS
-def dist_to_RAGER(RAGERS_ra, RAGERS_dec, RAGERS_dist, WISE_ra, WISE_dec, WISE_dist):
-    
-    c1 = SkyCoord(ra=RAGERS_ra*u.degree, dec=RAGERS_dec*u.degree, distance=RAGERS_dist*u.pc) # RAGERS
-    c2 = SkyCoord(ra=WISE_ra*u.degree, dec=WISE_dec*u.degree, distance=WISE_dist*u.pc)
-
-    # Obtain astropy's distance between c1 & c2 coords.
-    radial_dist = c1.separation_3d(c2)
-    return radial_dist
-
-
-# Adds columns with names mask1 - mask23 including boolean if source is within target radius
-for i in range(0,len(txt_coord['ra'])):
-    mask_name = 'mask'
-    mask_id = (mask_name + str(i+1))
-    WISE[str(mask_name + str(i+1))] = distance_to_centrum(WISE_coord, x_coord[i], y_coord[i], 15.0/3600.0)
+    mask_id = ('mask' + str(i+1))
+    ang_dist_id = ('ang_dist' + str(i+1))
+    WISE[str(mask_id)] = ang_dist(WISE, RAGER_ra[i], RAGER_dec[i], WISE_coord['ra'], WISE_coord['dec'], 15.0/3600.0)[0]
+    WISE[str(ang_dist_id)] = ang_dist(WISE, RAGER_ra[i], RAGER_dec[i], WISE_coord['ra'], WISE_coord['dec'], 15.0/3600.0)[1]
 
 # Create n dataframe names
 RAGERS = [['RAGER'+ str(_dummy)] for _dummy in range(1, 25)]
 
 # Loop to create list of dataframes with sources within target radius 15 arcsec of RAGERS
 for i in range(0,len(txt_coord['ra'])):
-    mask_name = 'mask'
-    mask_id = (mask_name + str(i+1))
-    RAGERS[i] = pd.DataFrame(WISE[WISE.columns[0:36]][WISE[str(mask_name + str(i+1))]])
+    mask_id = ('mask' + str(i+1))
+    if any(WISE[str(mask_id)]):
+        RAGERS[i] = pd.DataFrame(WISE[WISE.columns[0:36]][WISE[str(mask_id)]])
 
 # Count sources around each RAGER
 n_source = np.array(np.zeros(len(txt_coord['ra'])))
 for i in range(0,len(txt_coord['ra'])):
     n_source[i] = np.array([len(RAGERS[i]['w1mpro'])])
+    
+    if any(RAGERS[i]['w1mpro']):
+        print(f'RAGER{i+1}: obj_id {obj_id[i]} has {n_source[i]} sources within 15 arcseconds')
+    
+    else:
+        print(f'RAGER{i+1}: obj_id {obj_id[i]} has {n_source[i]} sources within 15 arcseconds')
 
+# Get source name for sources within 15 arcseconds
+for i in range(0,len(txt_coord['ra'])):
+    
+    if any(RAGERS[i]['w1mpro']):
+        WISE_names = RAGERS[i]['designation'].values[:]
+        print(f'RAGER{i+1}: obj_id {obj_id[i]} is near {WISE_names} ')
+
+# Get only value from dataframe cell
+# RAGERS[i]['designation'].values[0]
+
+# SCUBA/RAGER
+# z = 1.781
 
 ###################################
 # Loop to calculate flux for WISE sources around RAGERS
@@ -152,38 +126,30 @@ for i in range(0,len(txt_coord['ra'])):
     RAGERS[i]['flux_error_W4'] = Fv0_W4 * 10**(-m_vega_error_W4/2.5)
 
 
-##############################################
-### Calculate flux for all of WISE sources ###
+############################
+### Unused lines of code ###
 
-# Vega Magnitudes for different chanels
-m_vega_W1 = WISE['w1mpro']
-m_vega_W2 = WISE['w2mpro']
-m_vega_W3 = WISE['w3mpro']
-m_vega_W4 = WISE['w4mpro']
+# # Define coordinates as skycoord
+# c1 = SkyCoord(ra=x_coord*u.degree, dec=y_coord*u.degree, distance=1500.3*u.pc) # RAGERS
+# c2 = SkyCoord(ra=WISE_coord['ra']*u.degree, dec=WISE_coord['dec']*u.degree, distance=WISE['dist']*u.pc) # Other source
 
-# Flux uncerntanty in Vega Magnitude units for different chanels
-m_vega_error_W1 = WISE['w1sigmpro']
-m_vega_error_W2 = WISE['w2sigmpro']
-m_vega_error_W3 = WISE['w3sigmpro']
-m_vega_error_W4 = WISE['w4sigmpro']
+# Function to ceate new columns with distance to RAGERS
+# def dist_to_RAGER(RAGERS_ra, RAGERS_dec, RAGERS_dist, WISE_ra, WISE_dec, WISE_dist):
+    
+#     c1 = SkyCoord(ra=RAGERS_ra*u.degree, dec=RAGERS_dec*u.degree, distance=RAGERS_dist*u.pc) # RAGERS
+#     c2 = SkyCoord(ra=WISE_ra*u.degree, dec=WISE_dec*u.degree, distance=WISE_dist*u.pc)
 
-# Constants
-Fv0_W1 = 309.540
-Fv0_W2 = 171.757
-Fv0_W3 = 31.678
-Fv0_W4 = 8.363
+#     # Obtain astropy's distance between c1 & c2 coords.
+#     radial_dist = c1.separation_3d(c2)
+#     return radial_dist
 
-# Equation 1 - Vega Magnitudes to Flux Density
-flux_W1 = Fv0_W1 * 10**(-m_vega_W1/2.5)
-flux_W2 = Fv0_W2 * 10**(-m_vega_W2/2.5)
-flux_W3 = Fv0_W3 * 10**(-m_vega_W3/2.5)
-flux_W4 = Fv0_W4 * 10**(-m_vega_W4/2.5)
+# Calculate distance to RAGER sources with Hubble equation
+# def Hubble_dist(z):
+#     c = 299792458*u.m*u.s**(-1)
+#     v = c * z
+    
+#     H_0 = 70500*u.m*u.Mpc**(-1)*u.s**(-1)
+#     dist = v/H_0
 
-# Equation 1 - Vega Magnitudes uncertainty to Flux Density uncertainty
-flux_error_W1 = Fv0_W1 * 10**(-m_vega_error_W1/2.5)
-flux_error_W2 = Fv0_W2 * 10**(-m_vega_error_W2/2.5)
-flux_error_W3 = Fv0_W3 * 10**(-m_vega_error_W3/2.5)
-flux_error_W4 = Fv0_W4 * 10**(-m_vega_error_W4/2.5)
-
-
+#     return dist
 
