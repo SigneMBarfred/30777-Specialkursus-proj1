@@ -65,18 +65,20 @@ RAGERS = [['RAGER'+ str(_dummy)] for _dummy in range(1, 25)]
 # Loop to create list of dataframes with sources within target radius 15 arcsec of RAGERS
 for i in range(0,len(txt_coord['ra'])):
     mask_id = ('mask' + str(i+1))
-    if any(WISE[str(mask_id)]):
-        RAGERS[i] = pd.DataFrame(WISE[WISE.columns[0:36]][WISE[str(mask_id)]])
+    # if any(WISE[str(mask_id)]):
+    RAGERS[i] = pd.DataFrame(WISE[WISE.columns[0:36]][WISE[str(mask_id)]])
 
 # Count sources around each RAGER
 n_source = np.array(np.zeros(len(txt_coord['ra'])))
+
 for i in range(0,len(txt_coord['ra'])):
-    n_source[i] = np.array([len(RAGERS[i]['w1mpro'])])
     
     if any(RAGERS[i]['w1mpro']):
+        n_source[i] = np.array([len(RAGERS[i]['w1mpro'])])
         print(f'RAGER{i+1}: obj_id {obj_id[i]} has {n_source[i]} sources within 15 arcseconds')
     
     else:
+        n_source[i] = 0
         print(f'RAGER{i+1}: obj_id {obj_id[i]} has {n_source[i]} sources within 15 arcseconds')
 
 # Get source name for sources within 15 arcseconds
@@ -91,6 +93,8 @@ for i in range(0,len(txt_coord['ra'])):
 
 # SCUBA/RAGER
 # z = 1.781
+
+RAGERS[0, 3]
 
 ###################################
 # Loop to calculate flux for WISE sources around RAGERS
@@ -124,6 +128,17 @@ for i in range(0,len(txt_coord['ra'])):
     RAGERS[i]['flux_error_W2'] = Fv0_W2 * 10**(-m_vega_error_W2/2.5)
     RAGERS[i]['flux_error_W3'] = Fv0_W3 * 10**(-m_vega_error_W3/2.5)
     RAGERS[i]['flux_error_W4'] = Fv0_W4 * 10**(-m_vega_error_W4/2.5)
+
+############################
+### flux til sources     ###
+
+for i in [0, 2, 5, 6, 8, 11, 12, 13, 14, 15, 17, 21]:
+    flux_val1 = RAGERS[i]['flux_W1'].values[0]
+    flux_val2 = RAGERS[i]['flux_W2'].values[0]
+    flux_val3 = RAGERS[i]['flux_W3'].values[0]
+    flux_val4 = RAGERS[i]['flux_W4'].values[0]
+    print(f'{obj_id[i]}: Ch1 = {flux_val1}\n Ch2 = {flux_val2}\n Ch3 = {flux_val3}\n CH4 = {flux_val4}')
+
 
 
 ############################
