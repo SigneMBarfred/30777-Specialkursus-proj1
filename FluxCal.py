@@ -51,6 +51,9 @@ RAGER_ra = txt_coord['ra'] # RAGERS x_coord
 RAGER_dec = txt_coord['dec'] # RAGERS y_coord
 WISE_coord = WISE[['ra','dec']]
 
+# Create n dataframes: Will contain data on sources within 15 arcsec of RAGERS
+RAGERS = [['RAGER'+ str(_dummy)] for _dummy in range(1, 25)]
+
 # Adds columns with names mask1 - mask24 including boolean if source is within target radius
 # Adds columns with names ang_dist1 - ang_dist24 including boolean if source is within target radius
 for i in range(0,len(txt_coord['ra'])):
@@ -58,15 +61,10 @@ for i in range(0,len(txt_coord['ra'])):
     ang_dist_id = ('ang_dist' + str(i+1))
     WISE[str(mask_id)] = ang_dist(WISE, RAGER_ra[i], RAGER_dec[i], WISE_coord['ra'], WISE_coord['dec'], 15.0/3600.0)[0]
     WISE[str(ang_dist_id)] = ang_dist(WISE, RAGER_ra[i], RAGER_dec[i], WISE_coord['ra'], WISE_coord['dec'], 15.0/3600.0)[1]
-
-# Create n dataframe names
-RAGERS = [['RAGER'+ str(_dummy)] for _dummy in range(1, 25)]
-
-# Loop to create list of dataframes with sources within target radius 15 arcsec of RAGERS
-for i in range(0,len(txt_coord['ra'])):
-    mask_id = ('mask' + str(i+1))
-    # if any(WISE[str(mask_id)]):
+    
+    # Loop to create list of dataframes with sources within target radius 15 arcsec of RAGERS
     RAGERS[i] = pd.DataFrame(WISE[WISE.columns[0:36]][WISE[str(mask_id)]])
+    RAGERS[i]['ang_dist'] = WISE[str(ang_dist_id)][WISE[str(mask_id)]]
 
 # Count sources around each RAGER
 n_source = np.array(np.zeros(len(txt_coord['ra'])))
@@ -93,8 +91,6 @@ for i in range(0,len(txt_coord['ra'])):
 
 # SCUBA/RAGER
 # z = 1.781
-
-RAGERS[0, 3]
 
 ###################################
 # Loop to calculate flux for WISE sources around RAGERS
@@ -139,7 +135,11 @@ for i in [0, 2, 5, 6, 8, 11, 12, 13, 14, 15, 17, 21]:
     flux_val4 = RAGERS[i]['flux_W4'].values[0]
     print(f'{obj_id[i]}: Ch1 = {flux_val1}\n Ch2 = {flux_val2}\n Ch3 = {flux_val3}\n CH4 = {flux_val4}')
 
+### RAGERS calling commands ###
 
+# RAGERS[RAGER number with base zero][string column name]
+# To call multiple columns:
+    # RAGERS[15][['ang_dist', 'flux_W1']]
 
 ############################
 ### Unused lines of code ###
