@@ -14,6 +14,10 @@ import numpy as np
 import csv
 import math
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import stats
+
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.nddata import Cutout2D
@@ -86,15 +90,32 @@ for i in range(0,len(txt_coord['ra'])):
         WISE_names = RAGERS[i]['designation'].values[:]
         print(f'RAGER{i+1}: obj_id {obj_id[i]} is near {WISE_names} ')
 
-# Get only value from dataframe cell
-# RAGERS[i]['designation'].values[0]
-
 # SCUBA/RAGER
 # z = 1.781
 
 ###################################
 # Loop to calculate flux for WISE sources around RAGERS
 
+# Constants
+Fv0_W1 = 309.540
+Fv0_W2 = 171.757
+Fv0_W3 = 31.678
+Fv0_W4 = 8.363
+
+### WISE ###
+# Equation 1 - Vega Magnitudes to Flux Density
+WISE['flux_W1'] = Fv0_W1 * 10**(-WISE['w1mpro']/2.5)
+WISE['flux_W2'] = Fv0_W2 * 10**(-WISE['w2mpro']/2.5)
+WISE['flux_W3'] = Fv0_W3 * 10**(-WISE['w3mpro']/2.5)
+WISE['flux_W4'] = Fv0_W4 * 10**(-WISE['w4mpro']/2.5)
+
+# Equation 1 - Vega Magnitudes uncertainty to Flux Density uncertainty
+WISE['flux_error_W1'] = Fv0_W1 * 10**(-WISE['w1sigmpro']/2.5)
+WISE['flux_error_W2'] = Fv0_W2 * 10**(-WISE['w2sigmpro']/2.5)
+WISE['flux_error_W3'] = Fv0_W3 * 10**(-WISE['w3sigmpro']/2.5)
+WISE['flux_error_W4'] = Fv0_W4 * 10**(-WISE['w4sigmpro']/2.5)
+
+### RAGERS ###
 for i in range(0,len(txt_coord['ra'])):
     m_vega_W1 = RAGERS[i]['w1mpro']
     m_vega_W2 = RAGERS[i]['w2mpro']
@@ -106,12 +127,6 @@ for i in range(0,len(txt_coord['ra'])):
     m_vega_error_W2 = RAGERS[i]['w2sigmpro']
     m_vega_error_W3 = RAGERS[i]['w3sigmpro']
     m_vega_error_W4 = RAGERS[i]['w4sigmpro']
-
-    # Constants
-    Fv0_W1 = 309.540
-    Fv0_W2 = 171.757
-    Fv0_W3 = 31.678
-    Fv0_W4 = 8.363
 
     # Equation 1 - Vega Magnitudes to Flux Density
     RAGERS[i]['flux_W1'] = Fv0_W1 * 10**(-m_vega_W1/2.5)
@@ -128,18 +143,118 @@ for i in range(0,len(txt_coord['ra'])):
 ############################
 ### flux til sources     ###
 
-for i in [0, 2, 5, 6, 8, 11, 12, 13, 14, 15, 17, 21]:
-    flux_val1 = RAGERS[i]['flux_W1'].values[0]
-    flux_val2 = RAGERS[i]['flux_W2'].values[0]
-    flux_val3 = RAGERS[i]['flux_W3'].values[0]
-    flux_val4 = RAGERS[i]['flux_W4'].values[0]
-    print(f'{obj_id[i]}: Ch1 = {flux_val1}\n Ch2 = {flux_val2}\n Ch3 = {flux_val3}\n CH4 = {flux_val4}')
+# for i in [0, 2, 5, 6, 8, 11, 12, 13, 14, 15, 17, 21]:
+#     flux_val1 = RAGERS[i]['flux_W1'].values[0]
+#     flux_val2 = RAGERS[i]['flux_W2'].values[0]
+#     flux_val3 = RAGERS[i]['flux_W3'].values[0]
+#     flux_val4 = RAGERS[i]['flux_W4'].values[0]
+#     print(f'{obj_id[i]}: Ch1 = {flux_val1}\n Ch2 = {flux_val2}\n Ch3 = {flux_val3}\n CH4 = {flux_val4}')
+
+############################
+### Galaxy color-diagram ###
+
+wl_ch1 = 3.6*u.micron
+wl_ch2 = 4.5*u.micron
+wl_ch3 = 5.8*u.micron
+wl_ch4 = 8*u.micron
+
+# Precise wavelength [microns]
+# ch1: 3.5686
+# ch2: 4.5067
+# ch3: 5.7788
+# ch4: 7.9958
+
+### WISE ###
+ 
+# Equation - log Flux Density
+WISE['S3-S1'] = np.log(WISE['flux_W3']/WISE['flux_W1'])
+WISE['S3'] = np.log(WISE['flux_W3'])/np.log(10)
+
+### RAGERS ###
+for i in range(0,len(txt_coord['ra'])):    
+    # Equation 1 - log Flux Density
+    RAGERS[i]['S3-S1'] = np.log(RAGERS[i]['flux_W3']/RAGERS[i]['flux_W1'])
+    RAGERS[i]['S3'] = np.log(RAGERS[i]['flux_W3'])/np.log(10)
+
+color_RAGERS_x = np.array([RAGERS[0]['S3-S1'].values[0],RAGERS[2]['S3-S1'].values[0],RAGERS[5]['S3-S1'].values[0],RAGERS[6]['S3-S1'].values[0],
+    RAGERS[8]['S3-S1'].values[0], RAGERS[11]['S3-S1'].values[0],RAGERS[12]['S3-S1'].values[0],RAGERS[13]['S3-S1'].values[0],
+    RAGERS[14]['S3-S1'].values[0], RAGERS[15]['S3-S1'].values[0], RAGERS[15]['S3'].values[1], RAGERS[17]['S3-S1'].values[0], RAGERS[21]['S3-S1'].values[0]])
+
+color_RAGERS_y = np.array([RAGERS[0]['S3'].values[0],RAGERS[2]['S3'].values[0],RAGERS[5]['S3'].values[0],RAGERS[6]['S3'].values[0],
+    RAGERS[8]['S3'].values[0], RAGERS[11]['S3'].values[0],RAGERS[12]['S3'].values[0],RAGERS[13]['S3'].values[0],
+    RAGERS[14]['S3'].values[0], RAGERS[15]['S3'].values[0], RAGERS[15]['S3'].values[1], RAGERS[17]['S3'].values[0], RAGERS[21]['S3'].values[0]])
+
+# Hexbin af WISE - all sky catalouge - 600 arcsec radius af 3C239
+plt.figure()
+plt.hexbin(WISE['S3-S1'], WISE['S3'], vmax = 1, cmap = "binary", mincnt = 0, gridsize=(173,100))
+# set_xlim(0,2.5)
+# set_ylim(0,2.5)
+plt.ylabel("$S_{3}$", fontsize=12)
+plt.xlabel("$S_{3-1}$")
+plt.title('Color-Color diagram (WISE)')
+plt.show()
+
+t = np.arange(13)
+
+# color-color diagram of WISE sources within 15 arcsec of a RAGERS
+plt.figure()
+navn = plt.scatter(color_RAGERS_x, color_RAGERS_y, c=t, cmap='jet')
+plt.title("Galaxy color-color diagram")
+plt.xlabel("log $S_{5.8}$/$S_{3.6}$") #defines x-axis label
+plt.ylabel("log $S_{5.8}$ (Jy)") #defines y-axis label
+# plt.xlim(0, 2.5)
+# plt.ylim(-3.7, -3.2)
+plt.legend(handles=navn.legend_elements()[0], labels=('1','3','6','7','9','12','13','14','15','16(1)','16(2)','20','30') , loc='center left', bbox_to_anchor=(1, 0.5))
+plt.show
+
+# Combine the two previous plots
+df = pd.DataFrame({'log $S_{5.8}$/$S_{3.6} (Jy)$':color_RAGERS_x, 'log $S_{5.8} (Jy)$':color_RAGERS_y,'label': ('1','3','6','7','9','12','13','14','15','16(1)','16(2)','20','30'),'color': sns.color_palette("bright", 13)})
+
+fig, ax = plt.subplots()
+hex1 = ax.hexbin(WISE['S3-S1'], WISE['S3'], vmax = 1, cmap = "binary", mincnt = 0, gridsize=(173,100), label='WISE')
+ax = sns.scatterplot(x='log $S_{5.8}$/$S_{3.6} (Jy)$',y='log $S_{5.8} (Jy)$',hue = 'label', palette= sns.color_palette("bright", 13), data = df)
+ax.set(title='Galaxy color-color diagram')
+ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title="RAGER obj_id")
+plt.show()
+
+### Histogram ###
+
+# Hist1 for Ch 1 or W1
+plt.hist(WISE['flux_W1'], bins = 200, range=(0, 0.005) )
+plt.ylim(0,100)
+plt.title('Hist for WISE Ch1 flux')
+plt.show()
+
+# Hist1 for Ch 2 or W2
+plt.hist(WISE['flux_W2'], bins = 200, range=(0, 0.005) )
+plt.ylim(0,100)
+plt.title('Hist for WISE Ch2 flux')
+plt.show()
+
+# Hist1 for Ch 3 or W3
+plt.hist(WISE['flux_W3'], bins = 200, range=(0, 0.005) )
+plt.ylim(0,100)
+plt.title('Hist for WISE Ch3 flux')
+plt.show()
+
+# Hist1 for Ch 4 or W4
+plt.hist(WISE['flux_W4'], bins = 200, range=(0, 0.005) )
+plt.ylim(0,100)
+plt.title('Hist for WISE Ch4 flux')
+plt.show()
+
+# smirnof
+stats.kstest(WISE['flux_W4'], 'poiss')
+
 
 ### RAGERS calling commands ###
 
 # RAGERS[RAGER number with base zero][string column name]
 # To call multiple columns:
     # RAGERS[15][['ang_dist', 'flux_W1']]
+
+# Get only value from dataframe cell:
+# RAGERS[i]['designation'].values[0]
 
 ############################
 ### Unused lines of code ###
@@ -167,4 +282,5 @@ for i in [0, 2, 5, 6, 8, 11, 12, 13, 14, 15, 17, 21]:
 #     dist = v/H_0
 
 #     return dist
+
 
