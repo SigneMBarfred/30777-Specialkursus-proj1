@@ -40,7 +40,7 @@ for obj in idno:
         
         #irac file names are:
         #'cutout_spitzer_ch1_id_' + obj + '.fits'
-        hdu_spitzer = fits.open('C:/Users/signe/Documents/DTU/Specialkursus_radiogal/cutout_spitzer_ch1_id_' 
+        hdu_spitzer = fits.open('C:/Users/signe/Documents/DTU/Specialkursus_radiogal/cutout_spitzer_ch4_id_' 
                                 + str(int(obj)) + '.fits')
         data_spitzer = hdu_spitzer[0].data
         hdr_spitzer = hdu_spitzer[0].header
@@ -71,7 +71,7 @@ for obj in idno:
     
         vmin = np.nanmin(data_spitzer)
         vmax = np.nanmax(data_spitzer)
-        norm = colors.SymLogNorm(linthresh=0.5, linscale=3.5, vmin=vmin, vmax=vmax)
+        norm = colors.SymLogNorm(linthresh=1, linscale=2.5, vmin=vmin, vmax=vmax)
         
         
         
@@ -93,7 +93,7 @@ for obj in idno:
         ra.set_ticks(number=4)
         dec.set_ticks(number=4)
         
-        ax_spitzer.set_title('IRAC Ch1 map of Obj_id' + str(int(obj)))
+        ax_spitzer.set_title('IRAC Ch4 map of Obj_id' + str(int(obj)) )
         #ax_spitzer.contour(scuba_data, levels=levels, colors='blue',alpha=0.5)
       
         
@@ -107,7 +107,7 @@ for obj in idno:
         
         circle = SphericalCircle(loc, (15/3600)*u.deg, transform=ax_spitzer.get_transform('fk5'),color='red', alpha=0.2, facecolor='None')
         ax_spitzer.add_patch(circle)
-        plt.savefig('scuba_overlay_spitzer_ch1_id_' + str(int(idno[count])) + '.png')
+        plt.savefig('scuba_overlay_spitzer_ch4_id_' + str(int(idno[count])) + '.png')
         
     except FileNotFoundError:
         print("No cutout image of obj_id "+str(int(obj))+" as it lies outside IRAC image area")

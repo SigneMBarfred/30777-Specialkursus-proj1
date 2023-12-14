@@ -9,22 +9,24 @@ Created on Tue Sep 19 12:32:44 2023
 
 from astropy.io import fits
 from astropy.wcs import WCS
+import matplotlib.pyplot as plt
 import os,glob
 from astropy.utils.data import get_pkg_data_filename
-
+from astropy.coordinates import SkyCoord 
 
 folder_path = 'C:/Users/signe/Documents/DTU/Specialkursus_radiogal/irac_map_bcd_pbcd/r10789376/ch2/bcd'
 
 
 def spitzer_load(folder_path):
     n = 0 
-    for filename in glob.glob(os.path.join(folder_path, '*.fits')):
-        hdu = fits.open(filename)
-        hdr = hdu[0].header  # the primary HDU header with metadata
-        data = hdu[0].data
+    #for filename in glob.glob(os.path.join(folder_path, '*.fits')):
+    filename = get_pkg_data_filename('C:/Users/signe/Documents/DTU/Specialkursus_radiogal/irac_map_bcd_pbcd/r10789376/ch1/bcd/SPITZER_I1_10789376_0000_0000_7_bcd.fits')
+    hdu = fits.open(filename)
+    hdr = hdu[0].header  # the primary HDU header with metadata
+    data = hdu[0].data
         #append coordinates to list? for all files in directory, so as to make crossref w ragers easier? 
-        n = n+1
-        wcs = WCS(hdr)
+    #n = n+1
+    wcs = WCS(hdr)
         
     print(n,'fits files found and read')
     
@@ -51,6 +53,15 @@ def spitzer_load(folder_path):
 
 hdr = spitzer_load(folder_path)[1]
 wcs = spitzer_load(folder_path)[3]
+data = spitzer_load(folder_path)[0]
+
+
+plt.subplot(projection=wcs,slices=(50, 'y', 'x'))
+plt.imshow(data, vmin=-2.e-5, vmax=2.e-4, origin='lower')
+plt.grid(color='white', ls='solid')
+plt.xlabel('Galactic Longitude')
+plt.ylabel('Galactic Latitude')
+
 
 RA = hdr['RA_REF']
 DEC = hdr['DEC_REF']

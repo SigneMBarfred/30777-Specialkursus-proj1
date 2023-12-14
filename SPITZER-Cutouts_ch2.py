@@ -17,7 +17,7 @@ import matplotlib.colors as colors
 
 #should this be a for loop?
 # Open the FITS file and extract data and header
-fits_file_path = 'C:/Users/signe/Documents/DTU/Specialkursus_radiogal/irac_map_bcd_pbcd/r10789376/ch1/pbcd/SPITZER_I1_10789376_0000_7_E8309859_maic.fits'
+fits_file_path = 'C:/Users/signe/Documents/DTU/Specialkursus_radiogal/irac_map_bcd_pbcd/r10789376/ch2/pbcd/SPITZER_I2_10789376_0000_7_E8309673_maic.fits'
 hdu_spitzer = fits.open(fits_file_path)
 spitzer_data = hdu_spitzer[0].data
 spitzer_hdr = hdu_spitzer[0].header
@@ -36,7 +36,7 @@ plt.subplot(projection=wcs_spitzer)
 plt.imshow(original_image, origin='lower', norm=norm, cmap='viridis')
 plt.colorbar()
 plt.grid(color='white', ls='solid')
-plt.title('Spitzer Image')
+plt.title('Spitzer ch2 Image')
 plt.xlabel('RA (J2000)')
 plt.ylabel('DEC (J2000)')
 
@@ -72,14 +72,15 @@ for position in positions[0:21]:
     ax_cutout.grid(color='white', ls='solid')
     ax_cutout.set_xlabel('RA (J2000)')
     ax_cutout.set_ylabel('DEC (J2000)')
-    ax_cutout.set_title('IRAC Ch1 map of Obj_id' + str(int(idno[count])) + ' \n at ' + str(position) + '\n')
+    ax_cutout.set_title('IRAC Ch2 map of Obj_id' + str(int(idno[count])) + ' \n at ' + str(position) + '\n')
     
+    plt.savefig('cutout_spitzer_ch2_id_' + str(int(idno[count])) + '.png')
     
     #update header
     hdu_spitzer[0].header.update(cutout.wcs.to_header()) 
 
     # Write the cutout to a new FITS file
-    cutout_filename = 'cutout_spitzer_ch1_id_' + str(int(idno[count])) + '.fits'
+    cutout_filename = 'cutout_spitzer_ch2_id_' + str(int(idno[count])) + '.fits'
     fits.writeto(cutout_filename, cutout.data, header=hdu_spitzer[0].header, overwrite=True)
 
     
@@ -88,7 +89,7 @@ for position in positions[0:21]:
 
 
 # test that the generated fits files have correct wcs data
-cutout_test = fits.open('C:/Users/signe/Documents/DTU/Specialkursus_radiogal/cutout_spitzer_ch1_id_1.fits')
+cutout_test = fits.open('C:/Users/signe/Documents/DTU/Specialkursus_radiogal/cutout_spitzer_ch2_id_1.fits')
 cutout_data = cutout_test[0].data
 cutout_wcs = WCS(cutout_test[0].header)
 
@@ -100,7 +101,7 @@ plt.colorbar(im, ax=ax_cutout)  # Add colorbar to the current axes
 ax_cutout.grid(color='white', ls='solid')
 ax_cutout.set_xlabel('RA (J2000)')
 ax_cutout.set_ylabel('DEC (J2000)')
-ax_cutout.set_title('test af spitzer cutout 1')
+ax_cutout.set_title('test af spitzer ch2 cutout 1')
 ax_cutout.contour(cutout_data, levels=levels, colors='red', alpha=0.5)
 
 

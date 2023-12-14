@@ -26,19 +26,19 @@ import astropy.units as u
 
 # load Scuba data
 # hdu_scuba = fits.open('C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/Saved files/cutout1.0.fits')
-hdu_scuba = fits.open('C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/3C239_850_mf_cal_crop_snr.fits')
+hdu_scuba = fits.open('C:/Users/signe/Documents/DTU/Specialkursus_radiogal/3C239_850_mf_cal_crop_snr.fits')
 scuba850_data_cube = hdu_scuba[0].data  # This is a 3D cube
 hdr_scuba = hdu_scuba[0].header
 wcs_scuba = WCS(hdr_scuba)
 df_scuba = pd.DataFrame(scuba850_data_cube[0,:,:]) # Pandas dataframe
 
 # RAGERS koordinater txt fil
-positions_file = 'C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/RAGERStxt.txt'
+positions_file = 'C:/Users/signe/Documents/DTU/Specialkursus_radiogal/RAGERStxt.txt'
 txt_coord = pd.read_csv(positions_file, sep=" ") # Pandas dataframe
 obj_id = txt_coord['obj_id']
 
 # WISE data
-WISE = pd.read_csv('C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/Saved files/table_irsa_catalog_search_results.csv')
+WISE = pd.read_csv('C:/Users/signe/Documents/DTU/Specialkursus_radiogal/WISE_source_cat_3c239_600arcsec_radius.csv')
 WISE_header = WISE.columns
 
 #####################
@@ -103,6 +103,19 @@ Fv0_W3 = 31.678
 Fv0_W4 = 8.363
 
 ### WISE ###
+
+depth_w1 = np.max(WISE['w1mpro'])
+print("depth of w1 (3.4 microns): "+ str(depth_w1)+" vega mag")
+
+depth_w2 = np.max(WISE['w2mpro'])
+print("depth of w2 (4.6 microns): "+ str(depth_w2)+" vega mag")
+
+depth_w3 = np.max(WISE['w3mpro'])
+print("depth of w3 (12 microns): "+ str(depth_w3)+" vega mag")
+
+depth_w4 = np.max(WISE['w4mpro'])
+print("depth of w4 (22 microns): "+ str(depth_w4)+" vega mag")
+
 # Equation 1 - Vega Magnitudes to Flux Density
 WISE['flux_W1'] = Fv0_W1 * 10**(-WISE['w1mpro']/2.5)
 WISE['flux_W2'] = Fv0_W2 * 10**(-WISE['w2mpro']/2.5)
