@@ -15,7 +15,34 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 
 # Load IRAC data
-IRAC = pd.read_csv('C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/IRAC_source_cat_3c239_400arcsec_radius.csv')
+IRAC_data = pd.read_csv('C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/IRAC_source_cat_3c239_400arcsec_radius.csv')
+
+m1 = np.isnan(IRAC_data['i1_f_ap1']) & np.isnan(IRAC_data['i2_f_ap1'])
+IRAC = IRAC_data[~m1]
+
+# Constants Vega mag to flux
+Fv0_W1 = 280.9
+Fv0_W2 = 179.7
+Fv0_W3 = 115
+Fv0_W4 = 64.9
+
+ch1 = 2.79
+ch2 = 3.26
+ch3 = 3.73
+ch4 = 4.40
+
+# Unit definition mJy
+IRAC['i1_f_ap1'] = -1.085736205*np.log(IRAC['i1_f_ap1']/Fv0_W1) + ch1
+IRAC['i2_f_ap1'] = -1.085736205*np.log(IRAC['i2_f_ap1']/Fv0_W2) + ch2
+IRAC['i3_f_ap1'] = -1.085736205*np.log(IRAC['i3_f_ap1']/Fv0_W3) + ch3
+IRAC['i4_f_ap1'] = -1.085736205*np.log(IRAC['i4_f_ap1']/Fv0_W4) + ch4
+
+# Unit definition mJy - error
+IRAC['i1_df_ap1'] = -1.085736205*np.log(IRAC['i1_df_ap1']/Fv0_W1) + ch1
+IRAC['i2_df_ap1'] = -1.085736205*np.log(IRAC['i2_df_ap1']/Fv0_W2) + ch2
+IRAC['i3_df_ap1'] = -1.085736205*np.log(IRAC['i3_df_ap1']/Fv0_W3) + ch3
+IRAC['i4_df_ap1'] = -1.085736205*np.log(IRAC['i4_df_ap1']/Fv0_W4) + ch4
+
 
 # Unit definition mJy
 IRAC['i1_f_ap1'] = IRAC['i1_f_ap1'] * 10**(-6)
@@ -28,6 +55,17 @@ IRAC['i1_df_ap1'] = IRAC['i1_df_ap1'] * 10**(-6)
 IRAC['i2_df_ap1'] = IRAC['i2_df_ap1'] * 10**(-6)
 IRAC['i3_df_ap1'] = IRAC['i3_df_ap1'] * 10**(-6)
 IRAC['i4_df_ap1'] = IRAC['i4_df_ap1'] * 10**(-6)
+
+# IRAC['i1_mag'] = -1.085736205*np.log(IRAC['i1_f_ap1']/Fv0_W1) + ch1
+# IRAC['i2_mag'] = -1.085736205*np.log(IRAC['i2_f_ap1']/Fv0_W2) + ch2
+# IRAC['i3_mag'] = -1.085736205*np.log(IRAC['i3_f_ap1']/Fv0_W3) + ch3
+# IRAC['i4_mag'] = -1.085736205*np.log(IRAC['i4_f_ap1']/Fv0_W4) + ch4
+
+# # Unit definition mJy - error
+# IRAC['i1_df_mag'] = -1.085736205*np.log(IRAC['i1_df_ap1']/Fv0_W1) + ch1
+# IRAC['i2_df_mag'] = -1.085736205*np.log(IRAC['i2_df_ap1']/Fv0_W2) + ch2
+# IRAC['i3_df_mag'] = -1.085736205*np.log(IRAC['i3_df_ap1']/Fv0_W3) + ch3
+# IRAC['i4_df_mag'] = -1.085736205*np.log(IRAC['i4_df_ap1']/Fv0_W4) + ch4
 
 # RAGERS coordinates txt file
 positions_file = 'C:/Users/Nikolaj Lange Dons/OneDrive - Danmarks Tekniske Universitet/Dokumenter/5 semester/Space special kursus/RAGERStxt.txt'
@@ -142,38 +180,38 @@ for i in range(0,len(txt_coord['ra'])):
     RAGERS_IRAC[i]['S2-S3_err'] = np.log10(RAGERS_IRAC[i]['i2_df_ap1']/RAGERS_IRAC[i]['i3_df_ap1'])
 
 # Color arrays    
-color_RAGERS_IRAC_x = np.array([RAGERS_IRAC[2]['S1-S2'].values[0],RAGERS_IRAC[2]['S1-S2'].values[1],RAGERS_IRAC[6]['S1-S2'].values[0],RAGERS_IRAC[10]['S1-S2'].values[0],
+color_RAGERS_IRAC_x = np.array([RAGERS_IRAC[2]['S1-S2'].values[0],RAGERS_IRAC[2]['S1-S2'].values[1],
     RAGERS_IRAC[13]['S1-S2'].values[0], RAGERS_IRAC[15]['S1-S2'].values[0]])
 
-color_RAGERS_IRAC_y = np.array([RAGERS_IRAC[2]['S2-S3'].values[0],RAGERS_IRAC[2]['S2-S3'].values[1],RAGERS_IRAC[6]['S2-S3'].values[0],RAGERS_IRAC[10]['S2-S3'].values[0],
+color_RAGERS_IRAC_y = np.array([RAGERS_IRAC[2]['S2-S3'].values[0],RAGERS_IRAC[2]['S2-S3'].values[1],
     RAGERS_IRAC[13]['S2-S3'].values[0], RAGERS_IRAC[15]['S2-S3'].values[0]])
 
-flux_RAGERS_IRAC_y = np.array([RAGERS_IRAC[2]['S2'].values[0],RAGERS_IRAC[2]['S2'].values[1],RAGERS_IRAC[6]['S2'].values[0],RAGERS_IRAC[10]['S2'].values[0],
+flux_RAGERS_IRAC_y = np.array([RAGERS_IRAC[2]['S2'].values[0],RAGERS_IRAC[2]['S2'].values[1],
     RAGERS_IRAC[13]['S2'].values[0], RAGERS_IRAC[15]['S2'].values[0]])
 
 # 3. 7, 11, 14, 16
 # Color arrays - error
-color_RAGERS_IRAC_err_x = np.array([RAGERS_IRAC[2]['S1-S2_err'].values[0],RAGERS_IRAC[2]['S1-S2_err'].values[1],RAGERS_IRAC[6]['S1-S2_err'].values[0],RAGERS_IRAC[10]['S1-S2_err'].values[0],
+color_RAGERS_IRAC_err_x = np.array([RAGERS_IRAC[2]['S1-S2_err'].values[0],RAGERS_IRAC[2]['S1-S2_err'].values[1],
     RAGERS_IRAC[13]['S1-S2_err'].values[0], RAGERS_IRAC[15]['S1-S2_err'].values[0]])
 
-color_RAGERS_IRAC_err_y = np.array([RAGERS_IRAC[2]['S2-S3_err'].values[0],RAGERS_IRAC[2]['S2-S3_err'].values[1],RAGERS_IRAC[6]['S2-S3_err'].values[0],RAGERS_IRAC[10]['S2-S3_err'].values[0],
+color_RAGERS_IRAC_err_y = np.array([RAGERS_IRAC[2]['S2-S3_err'].values[0],RAGERS_IRAC[2]['S2-S3_err'].values[1],
     RAGERS_IRAC[13]['S2-S3_err'].values[0], RAGERS_IRAC[15]['S2-S3_err'].values[0]])
 
-flux_RAGERS_IRAC_err_y = np.array([RAGERS_IRAC[2]['S2_err'].values[0],RAGERS_IRAC[2]['S2_err'].values[1],RAGERS_IRAC[6]['S2_err'].values[0],RAGERS_IRAC[10]['S2_err'].values[0],
+flux_RAGERS_IRAC_err_y = np.array([RAGERS_IRAC[2]['S2_err'].values[0],RAGERS_IRAC[2]['S2_err'].values[1],
     RAGERS_IRAC[13]['S2_err'].values[0], RAGERS_IRAC[15]['S2_err'].values[0]])
 
 
 # Arrays with figure info about color, marker type and label
-color = ['black', 'darkred', 'darkorange', 'khaki', 'lightseagreen', 'steelblue']
-marker = ['o', 'o', 'o', 'o', 'o', 'o']
-label = ['3(1)','3(2)','7','11','14','16']
+color = ['black', 'darkred', 'darkorange', 'steelblue']
+marker = ['o', 'o', 'o', 'o']
+label = ['3(1)','3(2)','14','16']
 
 
 # x: Ch3-Ch1 color, y: Ch4-Ch2 color
 fig, ax = plt.subplots()
 hex1 = ax.hexbin(IRAC['S1-S2'], IRAC['S2'], vmax = 1, cmap = "binary", mincnt = 0, gridsize=(173,100))
 
-for i in [0,1,4,5]:
+for i in [0,1,2,3]:
     plt.scatter(color_RAGERS_IRAC_x[i], flux_RAGERS_IRAC_y[i], marker=marker[i], color=color[i], label=label[i])
     # plt.errorbar(color_RAGERS_IRAC_x[i], color_RAGERS_IRAC_y[i], yerr=color_RAGERS_IRAC_err_y[i], fmt=marker[i], color=color[i])
     # plt.errorbar(color_RAGERS_IRAC_x[i], color_RAGERS_IRAC_y[i], xerr=color_RAGERS_IRAC_err_x[i], fmt=marker[i], color=color[i])
@@ -181,12 +219,12 @@ for i in [0,1,4,5]:
 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-plt.plot([0.22, 0.22], [-5.3, -3.7], color= 'r' , linestyle='dashed')   
+# plt.plot([0.22, 0.22], [-5.3, -3.7], color= 'r' , linestyle='dashed')   
 
 plt.title('IRAC color diagram', fontsize=13)
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), title="RAGER obj_id") 
-plt.xlabel("log $S_{3.6}$/$S_{4.5}$", fontsize=10)
-plt.ylabel("log $S_{4.5}$ ($\mu$Jy)", fontsize=10)
+plt.xlabel("Ch1 - Ch2", fontsize=10)
+plt.ylabel("Ch2", fontsize=10)
 # plt.xlim(-1, 3)
 # plt.ylim(0,6)
 
@@ -217,13 +255,10 @@ for i in range(len(txt_coord['ra'])):
 
 
 
-
-
-
 ### Histogram ###
 
 # Hist1 for Ch3-Ch1
-plt.figure(figsize=(15,10), edgecolor='blue')
+plt.figure(figsize=(12,8), edgecolor='blue')
 plt.hist(IRAC['S1-S2'], bins = 20)
 # plt.ylim(0,30)
 plt.title('Hist for IRAC-color Ch1-Ch2', fontsize = 16)
@@ -232,7 +267,7 @@ plt.ylabel('Number of occourence', fontsize = 14)
 plt.show()
 
 # Hist2 for Ch4-Ch2
-plt.figure(figsize=(15,10), edgecolor='blue')
+plt.figure(figsize=(12, 8), edgecolor='blue')
 plt.hist(IRAC['S2'], bins = 20 )
 # plt.ylim(0,40)
 plt.title('Hist for IRAC-flux Ch2', fontsize = 16)
